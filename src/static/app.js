@@ -5,6 +5,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const messageDiv = document.getElementById("message");
   const searchInput = document.getElementById("activity-search");
   const sortSelect = document.getElementById("activity-sort");
+  const categorySelect = document.getElementById("activity-category");
 
   let allActivities = {};
 
@@ -21,14 +22,22 @@ document.addEventListener("DOMContentLoaded", () => {
         return detailsA.participants.length - detailsB.participants.length;
       }
 
+      if (sortBy === "schedule") {
+        return detailsA.schedule.localeCompare(detailsB.schedule);
+      }
+
       return nameA.localeCompare(nameB);
     });
   }
 
   function filterActivities() {
     const query = searchInput.value.trim().toLowerCase();
+    const category = categorySelect.value;
 
     const filtered = Object.entries(allActivities).filter(([name, details]) => {
+      if (category !== "all" && details.category !== category) {
+        return false;
+      }
       return (
         name.toLowerCase().includes(query) ||
         details.description.toLowerCase().includes(query) ||
@@ -72,6 +81,7 @@ document.addEventListener("DOMContentLoaded", () => {
         <h4>${name}</h4>
         <p>${details.description}</p>
         <p><strong>Schedule:</strong> ${details.schedule}</p>
+        <p><strong>Category:</strong> ${details.category}</p>
         <p><strong>Availability:</strong> ${spotsLeft} spots left</p>
         <div class="participants-container">
           ${participantsHTML}
@@ -97,6 +107,25 @@ document.addEventListener("DOMContentLoaded", () => {
       option.textContent = name;
       activitySelect.appendChild(option);
     });
+    populateCategoryOptions();
+  }
+
+  function populateCategoryOptions() {
+    const categories = new Set();
+    Object.values(allActivities).forEach((details) => {
+      if (details.category) {
+        categories.add(details.category);
+      }
+    });
+    categorySelect.innerHTML = "<option value=\"all\">All categories</option>";
+    Array.from(categories)
+      .sort()
+      .forEach((category) => {
+        const option = document.createElement("option");
+        option.value = category;
+        option.textContent = category;
+        categorySelect.appendChild(option);
+      });
   }
 
   function updateActivityDisplay() {
@@ -199,6 +228,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   searchInput.addEventListener("input", updateActivityDisplay);
+  categorySelect.addEventListener("change", updateActivityDisplay);
   sortSelect.addEventListener("change", updateActivityDisplay);
 
   fetchActivities();
